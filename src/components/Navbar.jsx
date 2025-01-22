@@ -14,7 +14,7 @@ import { SidebarLinks } from '../constants';
 import styles from './styles/Navbar.module.scss';
 import useScreenSize from '../hooks/useScreenSize';
 // import IconButton from '@mui/material/IconButton';
-import DevoteamLogo from '../assets/devoteam.png';
+import DevoteamLogo from '../components/assets/devoteam.png';
 
 const Navbar = () => {
   const navigate = useNavigate();

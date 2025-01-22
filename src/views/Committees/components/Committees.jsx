@@ -174,7 +174,7 @@ const Committees = () => {
       console.log(e);
     }
   };
-
+  
   return (
     <React.Fragment>
       <OverviewFilters committees={committees} applyFilters={applyFilters} />
