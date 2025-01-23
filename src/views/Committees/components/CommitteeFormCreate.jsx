@@ -100,6 +100,7 @@ const CommitteeFormCreate = () => {
       DepID: parseInt(formFields?.departmentID),
       IsActive: true,
     };
+    console.log("🚀 ~ CommitteeFormCreate ~ preparedData:", preparedData)
 
     try {
       const response = await CommitteeServices.create(preparedData);

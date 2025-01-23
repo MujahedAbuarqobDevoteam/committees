@@ -12,7 +12,7 @@ import {
   FaPen,
   FaTrash,
   FaDownload,
-  FaFileAlt,
+  
 } from 'react-icons/fa';
 import { IoTime } from 'react-icons/io5';
 
@@ -36,9 +36,8 @@ const MeetingDetails = () => {
   const { handleFileChange } = useFileUpload();
 
   const [votings, setVotings] = useState([]);
-  const [newVoting, setNewVoting] = useState({ question: '', options: [] });
+  const [newVoting, setNewVoting] = useState({ Question: '', Choices: [] });
   const [newOption, setNewOption] = useState('');
-  const [showMoreFiles, setShowMoreFiles] = useState(false);
 
   const [meetingDetails, setMeetingDetails] = useState({});
   const [fetchedData, setFetchedData] = useState({
@@ -82,7 +81,9 @@ const MeetingDetails = () => {
         const agendas = await apiService.getById('GetAgendaByMeeting', id);
         const meetingTypes = await apiService.getAll('GetAllMeetingType');
         const tasks = await apiService.getAll(`GetAllTaskByMeetingId/${id}`);
-
+        await apiService.getById('GetAllVoteByMeeting', `${+id}/${+localStorage.getItem('memberID')}`).then(res=>setVotings([
+          ...res
+        ]))
         setMeetingDetails(meetingData);
         setFetchedData(prev => ({
           ...prev,
@@ -104,60 +105,66 @@ const MeetingDetails = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    setVotings([
-      {
-        id: 1,
-        question: 'ما هو موعد الاجتماع القادم المفضل؟',
-        options: [
-          { id: 1, text: 'الاثنين', votes: 10 },
-          { id: 2, text: 'الأربعاء', votes: 15 },
-          { id: 3, text: 'الجمعة', votes: 5 },
-        ],
-      },
-    ]);
-  }, []);
 
   const addNewVoting = () => {
     setIsModalOpen({ ...isModalOpen, vote: true });
-    setNewVoting({ question: '', options: [] });
+    setNewVoting({ Question: '', Choices: [] });
   };
 
-  const handleSaveVoting = () => {
-    if (newVoting.question.trim() === '' || newVoting.options.length === 0) {
+  const handleSaveVoting = async() => {
+    if (!newVoting?.Question?.trim()?.length || !newVoting?.Choices?.length) {
       alert('Please enter a question and at least one option.');
       return;
     }
-    setVotings([...votings, { id: votings.length + 1, ...newVoting }]);
+
+    const data = {
+      MeetingID: +id,
+      StartDate: (new Date()).toISOString(), 
+      EndDate: (new Date(new Date().getTime() + 2 * 60 * 60 * 1000)).toISOString(), 
+      Question: newVoting?.Question,
+      CreatedBy: +localStorage.getItem('memberID'),
+      IsActive: true,
+      Choices: newVoting?.Choices
+  };
+    await apiService.create('CreateVoteWithChoices', data);
+    await apiService.getById('GetAllVoteByMeeting', `${+id}/${+localStorage.getItem('memberID')}`).then(res=>setVotings([
+     ...res
+    ]))
     setIsModalOpen({ ...isModalOpen, vote: false });
   };
 
   const handleAddOption = () => {
-    if (newOption.trim() !== '') {
+    if (newOption?.trim()?.length) {
       setNewVoting(prev => ({
         ...prev,
-        options: [...prev.options, { id: prev.options.length + 1, text: newOption, votes: 0 }],
+        Choices: [...prev?.Choices,  newOption ],
       }));
       setNewOption('');
     }
   };
 
-  const handleCancel = () => {
-    setIsModalOpen({ ...isModalOpen, vote: false });
+  const handleCancel = () =>  setIsModalOpen({ ...isModalOpen, vote: false });
+
+ const handleVote = async (votingId, optionId) => {
+    const data={
+       VoteID:votingId,
+       MemberID:+localStorage.getItem('memberID'),
+       ChoiceID:optionId,
+    }
+    await apiService.create('AddVotesCasts', data)?.then(res=>{
+      setVotings(prev =>
+        prev?.map(voting =>
+          voting.ID === votingId
+            ? {
+                ...voting,
+                Choices: res,
+              }
+            : voting,
+        ),
+      );
+    });
   };
 
-  const handleVote = (votingId, optionId) => {
-    setVotings(prev =>
-      prev?.map(voting =>
-        voting.id === votingId
-          ? {
-              ...voting,
-              options: voting.options?.map(option => (option.id === optionId ? { ...option, votes: option.votes + 1 } : option)),
-            }
-          : voting,
-      ),
-    );
-  };
 
   const handleAddTask = async () => {
     if (!task.taskName.trim() || !task.assignedTo.trim()) {
@@ -207,9 +214,8 @@ const MeetingDetails = () => {
     }
   };
 
-  const handleEditMeeting = id => {
+  const handleEditMeeting = id => 
     navigate(`/meetings/edit/${id}`);
-  };
 
   return (
     <div className={styles.meetingDetailsPage}>

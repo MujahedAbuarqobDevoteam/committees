@@ -5,8 +5,6 @@ import {
   FaCalendarAlt,
   FaPlus,
   FaArrowLeft,
-  FaTimes,
-  FaSave,
   FaTrash,
   FaPen,
   FaFileAlt,
@@ -18,7 +16,7 @@ import VotingModal from '../../../components/VotingModal';
 import VotingSystem from '../../../components/VotingSystem';
 import { Checkbox, Modal } from '@mui/material';
 import Discussions from './Discussions';
-import { CommitteeMembersServices, CommitteeServices } from '../services/committees.service';
+import {  CommitteeServices } from '../services/committees.service';
 import { FormatDateToArabic, FormatDateToArabicShort, FormatTimeToArabic, TruncateFileName } from '../../../helpers';
 import DeleteModal from '../../../components/DeleteModal';
 import { DeleteModalConstants, MeetingStatus, MIME_TYPE } from '../../../constants';
@@ -49,7 +47,7 @@ const CommitteeDetails = () => {
   const [showMoreMeetings, setShowMoreMeetings] = useState(false);
   const [showMoreFiles, setShowMoreFiles] = useState(false);
 
-  const [newVoting, setNewVoting] = useState({ question: '', options: [] });
+  const [newVoting, setNewVoting] = useState({ Question: '', Choices: [] });
   const [newOption, setNewOption] = useState('');
 
   const [votings, setVotings] = useState([]);
@@ -92,7 +90,10 @@ const CommitteeDetails = () => {
 
         apiService.getAll('GetAllRole').then(data => setFetchedCommitteeData(prev => ({ ...prev, roles: data })));
         apiService.getAll('/GetAllPermission').then(data => setFetchedCommitteeData(prev => ({ ...prev, Permissions: data })));
-
+        apiService.getAll('GetAllPermission').then(data => setFetchedCommitteeData(prev => ({ ...prev, Permissions: data })));
+        await apiService.getById('GetAllVoteByCommittee', `${+localStorage.getItem('selectedCommitteeID')}/${null}`).then(res=>setVotings([
+          ...res
+        ]))
         const userID = localStorage.getItem('userID');
         localStorage.setItem('memberID', committeeDetails?.Members?.find(u => u?.UserID === +userID)?.ID);
       } catch {
@@ -180,43 +181,41 @@ const CommitteeDetails = () => {
     }));
   };
 
-  // Changes / Deletion
-  useEffect(() => {
-    setVotings([
-      {
-        id: 1,
-        question: 'ما هو موعد الاجتماع القادم المفضل؟',
-        options: [
-          { id: 1, text: 'الاثنين', votes: 10 },
-          { id: 2, text: 'الأربعاء', votes: 15 },
-          { id: 3, text: 'الجمعة', votes: 5 },
-        ],
-      },
-    ]);
-  }, []);
 
   // Changes / Deletion
   const addNewVoting = () => {
     setIsModalOpen({ ...isModalOpen, voting: true });
-    setNewVoting({ question: '', options: [] });
+    setNewVoting({ Question: '', Choices: [] });
   };
 
-  // Changes / Deletion
-  const handleSaveVoting = () => {
-    if (newVoting.question.trim() === '' || newVoting.options.length === 0) {
+  const handleSaveVoting = async() => {
+    if (!newVoting?.Question?.trim()?.length || !newVoting?.Choices?.length) {
       alert('Please enter a question and at least one option.');
       return;
     }
-    setVotings([...votings, { id: votings.length + 1, ...newVoting }]);
+
+    const data = {
+      CommitteeID: +localStorage.getItem('selectedCommitteeID'),
+      StartDate: (new Date()).toISOString(), 
+      EndDate: (new Date(new Date().getTime() + 2 * 60 * 60 * 1000)).toISOString(), 
+      Question: newVoting?.question,
+      CreatedBy: +localStorage.getItem('memberID'),
+      IsActive: true,
+      Choices: newVoting?.Choices
+  };
+    await apiService.create('CreateVoteWithChoices', data);
+    await apiService.getById('GetAllVoteByCommittee', `${+localStorage.getItem('selectedCommitteeID')}/${+localStorage.getItem('memberId')}`).then(res=>setVotings([
+     ...res
+    ]))
     setIsModalOpen({ ...isModalOpen, voting: false });
   };
 
   // Changes / Deletion
   const handleAddOption = () => {
-    if (newOption.trim() !== '') {
+    if (newOption?.trim()?.length) {
       setNewVoting(prev => ({
         ...prev,
-        options: [...prev.options, { id: prev.options.length + 1, text: newOption, votes: 0 }],
+        Choices: [...prev?.Choices,  newOption ],
       }));
       setNewOption('');
     }
@@ -227,18 +226,24 @@ const CommitteeDetails = () => {
     setIsModalOpen({ ...isModalOpen, voting: false });
   };
 
-  // Changes / Deletion
-  const handleVote = (votingId, optionId) => {
-    setVotings(prev =>
-      prev?.map(voting =>
-        voting.id === votingId
-          ? {
-              ...voting,
-              options: voting.options?.map(option => (option.id === optionId ? { ...option, votes: option.votes + 1 } : option)),
-            }
-          : voting,
-      ),
-    );
+  const handleVote = async (votingId, optionId) => {
+    const data={
+       VoteID:votingId,
+       MemberID:+localStorage.getItem('memberID'),
+       ChoiceID:optionId,
+    }
+    await apiService.create('AddVotesCasts', data)?.then(res=>{
+      setVotings(prev =>
+        prev?.map(voting =>
+          voting.ID === votingId
+            ? {
+                ...voting,
+                Choices: res,
+              }
+            : voting,
+        ),
+      );
+    });
   };
 
   const toggleUserModal = () => {

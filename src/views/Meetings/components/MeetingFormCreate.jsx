@@ -173,8 +173,8 @@ const MeetingFormCreate = () => {
       EndTime: formFields?.endTime,
       Notes: formFields?.notes,
       Link: formFields?.link,
-      MeetingTypeID: parseInt(formFields?.meetingTypeID),
-      StatusId: MeetingStatus?.Upcoming,
+      MeetingTypeID:1,
+      StatusId: 1,
     };
 
     try {
@@ -198,7 +198,7 @@ const MeetingFormCreate = () => {
 
       for (const file of files) {
         await apiService.create('AddRelatedAttachmentMeeting', {
-          CommitteeID: parseInt(localStorage.getItem('selectedCommitteeID')),
+          CommitteeID: +localStorage.getItem('selectedCommitteeID'),
           MeetingID: newMeetingID,
           DocumentContent: file.base64,
           DocumentExt: file.extension,

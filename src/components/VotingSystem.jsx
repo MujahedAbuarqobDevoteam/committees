@@ -9,22 +9,22 @@ const VotingSystem = ({ votings, handleVote, addNewVoting }) => {
       <div className={`${styles.sectionHeaderTitle} ${styles.flexSpaceBetween}`}>
         <button onClick={addNewVoting} className={styles.sharedButton}>
           إضافة تصويت جديد
-          <FaPlus className={styles.addIcon} />
+          <FaPlus className={styles.addIcon}  />
         </button>
         <h5>نظام التصويت</h5>
       </div>
       <div className={styles.votingSection}>
         {votings?.map(voting => (
           <div key={voting.id} className={styles.votingCard}>
-            <h5>{voting.question}</h5>
+            <h5>{voting?.Question}</h5>
             <ul>
-              {voting.options?.map(option => (
-                <li key={option.id}>
-                  <span>{option.text}</span>
-                  <button onClick={() => handleVote(voting.id, option.id)} className={styles.voteButton}>
+              {voting?.Choices?.map(choice => (
+                <li key={choice.ID}>
+                  <span>{choice.Text}</span>
+                  <button onClick={() => handleVote(voting?.ID, choice?.ID)} className={styles.voteButton}>
                     تصويت
                   </button>
-                  <span>{option.votes} أصوات</span>
+                  <span>{choice?.VoteCount} أصوات</span>
                 </li>
               ))}
             </ul>

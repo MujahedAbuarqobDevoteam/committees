@@ -13,6 +13,8 @@ const VotingModal = ({
   setNewVoting,
   setNewOption,
 }) => {
+  console.log("🚀 ~ newOption:", newOption)
+  console.log("🚀 ~ newVoting:", newVoting)
   return (
     <>
       {isModalOpen && (
@@ -22,8 +24,8 @@ const VotingModal = ({
             <label>السؤال:</label>
             <input
               type='text'
-              value={newVoting.question}
-              onChange={e => setNewVoting({ ...newVoting, question: e.target.value })}
+              value={newVoting?.Question}
+              onChange={e => setNewVoting({ ...newVoting, Question: e.target.value })}
               placeholder='أدخل سؤال التصويت'
             />
             <label>الإختيارات:</label>
@@ -34,8 +36,8 @@ const VotingModal = ({
               <input type='text' value={newOption} onChange={e => setNewOption(e.target.value)} placeholder='أدخل خيار جديد' />
             </div>
             <ul className={styles.optionList}>
-              {newVoting.options(option => (
-                <li key={option.id}>{option.text}</li>
+              {newVoting?.Choices?.map(option => (
+                <li key={Math.random()}>{option}</li>
               ))}
             </ul>
             <div className={styles.modalActions}>
